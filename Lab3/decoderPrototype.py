@@ -4,9 +4,11 @@ def opcodeDecoder(opCode):
     #PARSING "OPCODE" STRING'S FIRST 6 CHARACTERS AND THEN CONVERTING IT TO HEX VIA BUILT IN FUNCTIONS TO CONTINUE ON AND PASS ON TO MORE FUNCTIONS
     #print(opCode[-6:])
     #THESE ARE BUILT IN Python Functions
+    #this is for funct specifically
     to_dec_funct = int(opCode[-6:],2)
     to_dec = int(opCode[:6],2)
     to_hex = hex(to_dec)
+    #this is to turn funct into hex to compare with data frame
     to_hex_funct = hex(to_dec_funct)
     #print(to_dec_funct)
     #print(to_hex[2:])
@@ -39,6 +41,7 @@ def opcodeDecoder(opCode):
         if to_hex[2:] == I_type_dict.iloc[i, 1]:
             op_name = I_type_dict.iloc[i, 0]
             instruction_type="I"
+    #Im using the to_hex_funct variable since this takes the last 6 bits of a 32 bit and converts it to the hex of a funct which is stored in our R type dictionary
     for r in range(len(R_type_dict)):
         if to_hex_funct[-2:] == R_type_dict.iloc[r, 1]:
             op_name = R_type_dict.iloc[r, 0]
