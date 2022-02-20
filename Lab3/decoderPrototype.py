@@ -1,5 +1,29 @@
 import pandas as pd
+def iTypeDecoder(opCode):
+    
+    rs = opCode[6:11]
+    print("Rs: $",end = "")
+    print(int(rs,2))
+    rt = opCode[11:16]
+    print("Rt: $",end="") 
+    print(int(rt,2))
+    imm = opCode[16:32]
+    print("Immediate: ",end="") 
+    print(int(imm,2), end=" ") 
+    print("or (", end = "")
+    print(hex(int(imm,2)), end = "") 
+    print(")")
 
+def rTypeDecoder(opCode):
+    #print(" r type not done")
+    rs = " "
+    rt = " "
+    rd = " "
+    shamt = " "
+    funct = " "
+def jTypeDecoder(opCode):
+    #print("j type not done")
+    imm = " "
 def opcodeDecoder(opCode):
     #PARSING "OPCODE" STRING'S FIRST 6 CHARACTERS AND THEN CONVERTING IT TO HEX VIA BUILT IN FUNCTIONS TO CONTINUE ON AND PASS ON TO MORE FUNCTIONS
     #print(opCode[-6:])
@@ -46,10 +70,14 @@ def opcodeDecoder(opCode):
         if to_hex_funct[-2:] == R_type_dict.iloc[r, 1]:
             op_name = R_type_dict.iloc[r, 0]
             instruction_type="R"
-            
-    print(instruction_type)   
-    
-    print(op_name) 
+    if instruction_type == 'I':
+        iTypeDecoder(opCode)
+    if instruction_type == 'J':
+        jTypeDecoder(opCode)
+    if instruction_type == 'R':
+        rTypeDecoder(opCode)
+    #print(instruction_type)   
+    # print(op_name) 
 
                     
 def main():
