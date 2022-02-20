@@ -18,6 +18,16 @@ def opcodeDecoder(opCode):
     '''Since we now have the operations and their respective hex value as an opcode in a data frame we can now compare the user 
        input(as a decimal) with the hex value with each respective operation (in decimal) and then return what operation type it is to main
     '''
+
+    '''
+    SOME SIMPLE EXAMPLES ON HOW TO ACCESS EACH COLUMN IN THE DATA FRAMES
+    print(I_type_dict.loc[:,"op(hex)"])
+    print(I_type_dict.loc[:,"Operation"])
+    print(R_type_dict.loc[:,"funct(hex)"])
+    print(R_type_dict.loc[:,"Operation"])
+    print(J_type_dict.loc[:,"op(hex)"])
+    print(J_type_dict.loc[:,"Operation"])
+    '''
 def main():
     
     
