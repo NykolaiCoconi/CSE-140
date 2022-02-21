@@ -15,28 +15,52 @@ def iTypeDecoder(machine_instruction):
     print(")")
 
 def rTypeDecoder(machine_instruction):
-    #print(" r type not done")
-    rs = " "
-    rt = " "
-    rd = " "
-    shamt = " "
-    funct = " "
+    rs = machine_instruction[6:11]
+    rt = machine_instruction[11:16]
+    rd = machine_instruction[16:21]
+    shamt = machine_instruction[21:26]
+    funct = machine_instruction[-6:]
+    print("Rs: $",end = "")
+    print(int(rs,2))
+    print("Rt: $",end = "")
+    print(int(rt,2))
+    print("Rd: $",end = "")
+    print(int(rd,2))
+    print("Shamt: $",end = "")
+    print(int(shamt,2))
+    print("Funct: ",end = "")
+    print(int(funct,2),end = "")
+    print(" or (", end = "")
+    print(hex(int(funct,2)), end = "")
+    print(")")
+    
 def jTypeDecoder(machine_instruction):
-    #print("j type not done")
-    imm = " "
+    imm = machine_instruction[-26:]
+    print(imm)
+    print("Immediate: ",end="")
+    print(int(imm,2), end=" ") 
+    print("or (", end = "")
+    print(hex(int(imm,2)), end = "") 
+    print(")")
+    
 def opCodeDecoder(machine_instruction):
     #PARSING "OPCODE" STRING'S FIRST 6 CHARACTERS AND THEN CONVERTING IT TO HEX VIA BUILT IN FUNCTIONS TO CONTINUE ON AND PASS ON TO MORE FUNCTIONS
-    #print(opCode[-6:])
+    opcode = machine_instruction[:6]
     #THESE ARE BUILT IN Python Functions
     #this is for funct specifically
-    to_dec_funct = int(machine_instruction[-6:],2)
-    to_dec = int(machine_instruction[:6],2)
-    to_hex = hex(to_dec)
-    #this is to turn funct into hex to compare with data frame
-    to_hex_funct = hex(to_dec_funct)
+    funct = machine_instruction[-6:]
+    #to_dec_funct = int(funct)
+    #to_dec = int(opcode)
+    #print(opcode)
+    #print(to_dec)
+    #print(funct)
     #print(to_dec_funct)
-    #print(to_hex[2:])
-    #print(to_hex_funct[2:])
+    opcode_hex = hex(int(opcode,2))
+    #this is to turn funct into hex to compare with data frame
+    funct_hex = hex(int(funct,2))
+    #print(to_dec_funct)
+    #print(opcode_hex)
+    #print(funct_hex)
     # I am thinking about making some sort of key or dict to hold all operations and their types
 
 
@@ -55,24 +79,34 @@ def opCodeDecoder(machine_instruction):
     instruction_type = " "
     #0 is operation name and column 1 is hex value of opcode for I type and j type and column 1 is funct in hex if r type
 
-    #for some reason this works for I type but not all the way I still need to fix it up a bit
-    for j in range(len(J_type_dict)):
-        if to_hex[2:] == J_type_dict.iloc[j, 1]:
-            op_name = J_type_dict.iloc[j, 0]
-            instruction_type="J"
+    #Changed the statements so we don't go through the whole excel each time
+
     
-    for i in range(len(I_type_dict)):
-        if to_hex[2:] == I_type_dict.iloc[i, 1]:
-            op_name = I_type_dict.iloc[i, 0]
-            instruction_type="I"
-    #Im using the to_hex_funct variable since this takes the last 6 bits of a 32 bit and converts it to the hex of a funct which is stored in our R type dictionary
-    for r in range(len(R_type_dict)):
-        if to_hex_funct[-2:] == R_type_dict.iloc[r, 1]:
-            op_name = R_type_dict.iloc[r, 0]
-            instruction_type="R"
+    if opcode_hex == hex(0):
+        for r in range(len(R_type_dict)):
+            if funct_hex == R_type_dict.iloc[r, 1]:
+                op_name = R_type_dict.iloc[r, 0]
+                instruction_type = "R"
+                #print(op_name)
+    if opcode_hex == hex(2) and instruction_type == " ":
+        instruction_type="J"
+        op_name = "j"
+        #print(op_name)
+    if opcode_hex == hex(3) and instruction_type == " ":
+        instruction_type="J"
+        op_name = "jal"
+        #print(op_name)    
+    if instruction_type == " ":
+        for i in range(len(I_type_dict)):
+            if opcode_hex == I_type_dict.iloc[i, 1]:
+                op_name = I_type_dict.iloc[i, 0]
+                instruction_type="I"
+        if instruction_type == " ":
+            instruction_type="N/A"
+            op_name = "N/A"
            
     print("\nInstruction Type: " + instruction_type)   
-    print("Operation" + op_name) 
+    print("Operation: " + op_name) 
     
     #REGISTER MAPPING
 
@@ -86,12 +120,11 @@ def opCodeDecoder(machine_instruction):
 
                     
 def main():
-    
-    
     machine_instruction = input("Enter an instruction:\n")
     #I AM PASSING WHOLE 32 BIT MACHINE INSTRUCTION HERE SO THAT I COULD LATER PASS THAT ON TO OTHER FUNCTIONS BASED ON WHAT THE FUNCTION IS
     opCodeDecoder(machine_instruction)
     
+
 
 if __name__ == "__main__":
     main()
