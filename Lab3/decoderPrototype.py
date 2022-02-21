@@ -1,6 +1,14 @@
 import pandas as pd
+
+def loopCode(answer):
+    if answer == "1":
+        machine_instruction = input("\nEnter an instruction:\n\n")
+        opCodeDecoder(machine_instruction)
+    else:
+        print("\nCode finished")
+        exit
+
 def iTypeDecoder(machine_instruction):
-    
     rs = machine_instruction[6:11]
     print("Rs: $",end = "")
     print(int(rs,2))
@@ -13,6 +21,9 @@ def iTypeDecoder(machine_instruction):
     print("or (", end = "")
     print(hex(int(imm,2)), end = "") 
     print(")")
+    answer = input("\nEnter 1 to continue:\n")
+    loopCode(answer)
+    
 
 def rTypeDecoder(machine_instruction):
     rs = machine_instruction[6:11]
@@ -33,15 +44,19 @@ def rTypeDecoder(machine_instruction):
     print(" or (", end = "")
     print(hex(int(funct,2)), end = "")
     print(")")
+    answer = input("\nEnter 1 to continue:\n")
+    loopCode(answer)
     
 def jTypeDecoder(machine_instruction):
     imm = machine_instruction[-26:]
-    print(imm)
+    #print(imm)
     print("Immediate: ",end="")
     print(int(imm,2), end=" ") 
     print("or (", end = "")
     print(hex(int(imm,2)), end = "") 
     print(")")
+    answer = input("\nEnter 1 to continue:\n")
+    loopCode(answer)
     
 def opCodeDecoder(machine_instruction):
     #PARSING "OPCODE" STRING'S FIRST 6 CHARACTERS AND THEN CONVERTING IT TO HEX VIA BUILT IN FUNCTIONS TO CONTINUE ON AND PASS ON TO MORE FUNCTIONS
@@ -120,7 +135,7 @@ def opCodeDecoder(machine_instruction):
 
                     
 def main():
-    machine_instruction = input("Enter an instruction:\n")
+    machine_instruction = input("Enter an instruction:\n\n")
     #I AM PASSING WHOLE 32 BIT MACHINE INSTRUCTION HERE SO THAT I COULD LATER PASS THAT ON TO OTHER FUNCTIONS BASED ON WHAT THE FUNCTION IS
     opCodeDecoder(machine_instruction)
     
