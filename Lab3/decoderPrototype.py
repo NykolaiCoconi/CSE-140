@@ -1,5 +1,5 @@
 import pandas as pd
-
+'''
 def loopCode(answer):
     if answer == "1":
         machine_instruction = input("\nEnter an instruction:\n\n")
@@ -7,7 +7,7 @@ def loopCode(answer):
     else:
         print("\nCode finished")
         exit
-
+'''
 def iTypeDecoder(machine_instruction):
     rs = machine_instruction[6:11]
     print("Rs: $",end = "")
@@ -21,8 +21,8 @@ def iTypeDecoder(machine_instruction):
     print("or (", end = "")
     print(hex(int(imm,2)), end = "") 
     print(")")
-    answer = input("\nEnter 1 to continue:\n")
-    loopCode(answer)
+    #answer = input("\nEnter 1 to continue:\n")
+    #loopCode(answer)
     
 
 def rTypeDecoder(machine_instruction):
@@ -44,8 +44,8 @@ def rTypeDecoder(machine_instruction):
     print(" or (", end = "")
     print(hex(int(funct,2)), end = "")
     print(")")
-    answer = input("\nEnter 1 to continue:\n")
-    loopCode(answer)
+    #answer = input("\nEnter 1 to continue:\n")
+    #loopCode(answer)
     
 def jTypeDecoder(machine_instruction):
     imm = machine_instruction[-26:]
@@ -55,8 +55,8 @@ def jTypeDecoder(machine_instruction):
     print("or (", end = "")
     print(hex(int(imm,2)), end = "") 
     print(")")
-    answer = input("\nEnter 1 to continue:\n")
-    loopCode(answer)
+    #answer = input("\nEnter 1 to continue:\n")
+    #loopCode(answer)
     
 def opCodeDecoder(machine_instruction):
     #PARSING "OPCODE" STRING'S FIRST 6 CHARACTERS AND THEN CONVERTING IT TO HEX VIA BUILT IN FUNCTIONS TO CONTINUE ON AND PASS ON TO MORE FUNCTIONS
