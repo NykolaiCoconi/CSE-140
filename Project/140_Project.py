@@ -2,24 +2,25 @@
 filename = "sample_part1.txt"
 
 #Create global variables pc, hi, and lo
-pc = 0
-next_pc = 0
-hi = 0
-lo = 0
+pc = next_pc = hi = lo = "0x0"
 
 #More Globals
 total_clock_cycles = branch_target = jump_target = 0
-current_machine_code = op_name = instruction_type = " "
+current_machine_code = op_name = instruction_type = ""
+rs = rt = rd = shamt = imm = funct = physical_address = ""
 
 #Control Switches
 RegWrite = RegDst = Branch = ALUSrc = InstType = MemWrite = MemtoReg = MemRead = Jump = 0
 
 registerfile = [0] * 32
 
+#Putting these in so we can use actual hex values to get the key to to d-mem
+
 #Got rid of type decoder definitions, only need decoder
 
+
 def Decode():
-    global op_name, instruction_type
+    global op_name, instruction_type, jump_target, rs, rt, rd, shamt, imm, funct, physical_address
 
     machine_instruction = current_machine_code
     #PARSING "OPCODE" STRING'S FIRST 6 CHARACTERS AND THEN CONVERTING IT TO HEX VIA BUILT IN FUNCTIONS TO CONTINUE ON AND PASS ON TO MORE FUNCTIONS
@@ -42,8 +43,8 @@ def Decode():
             '0x2b':'sltu','0x0':'sll','0x2':'srl','0x22':'sub','0x23':'subu'
     }
    
-    op_name = " "
-    instruction_type = " "
+    op_name = ""
+    instruction_type = ""
     #0 is operation name and column 1 is hex value of opcode for I type and j type and column 1 is funct in hex if r type
 
     if opcode_hex == hex(0):
@@ -51,22 +52,23 @@ def Decode():
             if funct_hex == key:
                 op_name = R_Dict[key]
                 instruction_type = "R"
-    if opcode_hex == hex(2) and instruction_type == " ":
+    if opcode_hex == hex(2) and instruction_type == "":
         instruction_type="J"
         op_name = "j"
-    if opcode_hex == hex(3) and instruction_type == " ":
+    if opcode_hex == hex(3) and instruction_type == "":
         instruction_type="J"
         op_name = "jal"
-    if instruction_type == " ":
+    if instruction_type == "":
         for key in I_Dict:
             if opcode_hex == key:
                 op_name = I_Dict[key]
                 instruction_type = "I"
-        if instruction_type == " ":
+        if instruction_type == "":
             instruction_type="N/A"
             op_name = "N/A"
            
-    
+    ControlUnit()
+
     print("\nInstruction Type: " + instruction_type)   
     print("Operation: " + op_name) 
     
@@ -74,23 +76,26 @@ def Decode():
         rs = machine_instruction[6:11]
         rt = machine_instruction[11:16]
         imm = machine_instruction[16:32]
-        print("Rs: $",end = "")
-        print(int(rs,2))
-        print("Rt: $",end="") 
-        print(int(rt,2))
-        print("Immediate: ",end="") 
-        print(int(imm,2), end=" ") 
-        print("or (", end = "")
-        print(hex(int(imm,2)), end = "") 
-        print(")")
+
+        #Used for Sign Extension
+        check = imm[0]
+        if check == "0":
+            physical_address = "0000" + imm
+        else:
+            physical_address = "1111" + imm
+        
+
 
     if instruction_type == 'J':
         imm = machine_instruction[-26:]
-        print("Immediate: ",end="")
-        print(int(imm,2), end=" ") 
-        print("or (", end = "")
-        print(hex(int(imm,2)), end = "") 
-        print(")")
+        
+        #Shift-Left-2: 
+        print(next_pc)
+        jump_target = next_pc + imm + "00" #Very Confused Here
+        print(jump_target)
+
+
+        
 
     if instruction_type == 'R':
         rs = machine_instruction[6:11]
@@ -98,19 +103,7 @@ def Decode():
         rd = machine_instruction[16:21]
         shamt = machine_instruction[21:26]
         funct = machine_instruction[-6:]
-        print("Rs: $",end = "")
-        print(int(rs,2))
-        print("Rt: $",end = "")
-        print(int(rt,2))
-        print("Rd: $",end = "")
-        print(int(rd,2))
-        print("Shamt: ",end = "")
-        print(int(shamt,2))
-        print("Funct: ",end = "")
-        print(int(funct,2),end = "")
-        print(" or (", end = "")
-        print(hex(int(funct,2)), end = "")
-        print(")")
+        
     
     
 
@@ -121,8 +114,10 @@ def Decode():
 
 def Fetch():
     global current_machine_code, pc, next_pc
-    current_machine_code = machine_codes[pc]
-    next_pc = pc + 4
+    current_machine_code = machine_codes[int(pc,16)]
+    next_pc = hex(int(pc, 16) + int("0x4", 16))
+    pc = hex(int(pc, 16) + int("0x4", 16))
+    print(pc)
     return 
 
 def Mem():
@@ -137,9 +132,28 @@ def Writeback():
 
     return
 
+#Control Unit Should be done, but the InstType is iffy cause in the slides there are two types
 def ControlUnit():
+    global RegWrite, RegDst, Branch, ALUSrc, InstType, MemWrite, MemtoReg, MemRead, Jump
 
+    if instruction_type == "R":
+        Branch = ALUSrc = MemWrite = MemtoReg = MemRead = Jump = 0
+        RegWrite = RegDst = InstType = 1
 
+    if instruction_type == "I":
+        if op_name == 'lw':
+            Branch = Jump = RegDst = InstType = MemWrite = 0
+            ALUSrc = MemtoReg = MemRead = RegWrite = 1
+        if op_name == 'sw':
+            Branch = MemtoReg = MemRead = Jump = RegWrite = RegDst = InstType = 0
+            ALUSrc = MemWrite = 1
+        if op_name == 'beq':
+            ALUSrc = MemWrite = MemtoReg = MemRead = Jump = RegWrite = RegDst = 0
+            Branch = InstType = 1
+
+    if instruction_type == "J":
+        RegWrite = RegDst = Branch = ALUSrc = InstType = MemWrite = MemtoReg = MemRead = 0
+        Jump = 1
 
     return    
 
@@ -181,6 +195,7 @@ def main():
     for i in range(0,len(lines)):
         if lines[i] != "": 
             Fetch()
+            Decode()
             
     
 
