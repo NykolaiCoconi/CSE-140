@@ -117,25 +117,12 @@ def Decode():
 
 #Semi-working, got confused on what they want here, but there is a basic setup to get back the
 #correct code to the main program
+#Fixed my confusion, no need for any logic here, that is later
 
 def Fetch():
     global current_machine_code, pc, next_pc
-    
     current_machine_code = machine_codes[pc]
-    pc = pc + 4
     next_pc = pc + 4
-
-    Decode()
-
-    #Need logic to see what is going to be next pc
-    
-                   
-
-    
-
-    #print(next_pc)
-    #print (int(next_pc,16))
-    #print (machine_codes[int(next_pc,16)])
     return 
 
 def Mem():
