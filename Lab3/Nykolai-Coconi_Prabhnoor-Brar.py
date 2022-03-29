@@ -70,7 +70,7 @@ def opCodeDecoder(machine_instruction):
     '''
     Essentially made a data frame with two columns, operation name and op(hex), or for r type: operation name and funct(hex)"
     '''
-    Dict = {    
+    I_Dict = {    
             '0x8':'addi',
             '0x9':'addiu',
             '0xc':'andi',
@@ -88,6 +88,8 @@ def opCodeDecoder(machine_instruction):
             '0x38':'sc',
             '0x29':'sh',
             '0x2b':'sw',
+    }
+    R_Dict = {
             '0x20':'add',
             '0x21':'addu',
             '0x24':'and',
@@ -111,9 +113,9 @@ def opCodeDecoder(machine_instruction):
     #Changed the statements so we don't go through the whole excel each time
 
     if opcode_hex == hex(0):
-        for key in Dict:
+        for key in R_Dict:
             if funct_hex == key:
-                op_name = Dict[key];
+                op_name = R_Dict[key];
                 instruction_type = "R"
    
     if opcode_hex == hex(2) and instruction_type == " ":
@@ -125,9 +127,9 @@ def opCodeDecoder(machine_instruction):
         op_name = "jal"
         #print(op_name)    
     if instruction_type == " ":
-        for key in Dict:
+        for key in I_Dict:
             if opcode_hex == key:
-                op_name = Dict[key];
+                op_name = I_Dict[key];
                 instruction_type = "I"
         if instruction_type == " ":
             instruction_type="N/A"
