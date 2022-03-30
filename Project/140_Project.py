@@ -1,5 +1,5 @@
 #Where we are reading the machine code from. Changed later to user input
-filename = "sample_part1.txt"
+filename = "sample_part2.txt"
 
 #Create global variables pc, hi, and lo
 pc = next_pc = hi = lo = "0x0"
@@ -8,10 +8,10 @@ pc = next_pc = hi = lo = "0x0"
 total_clock_cycles = branch_target = jump_target = 0
 current_machine_code = op_name = instruction_type = ""
 rs = rt = rd = shamt = imm = funct = physical_address = ""
-alu_zero=0
-branch_target = 0
+
 #Control Switches
-RegWrite = RegDst = Branch = ALUSrc = InstType = MemWrite = MemtoReg = MemRead = Jump = 0
+RegWrite = RegDst = Branch = ALUSrc = MemWrite = MemtoReg = MemRead = Jump = 0
+InstType = "00"
 
 registerfile = [0] * 32
 
@@ -96,8 +96,6 @@ def Decode():
         print(jump_target)
 
 
-        
-
     if instruction_type == 'R':
         rs = machine_instruction[6:11]
         rt = machine_instruction[11:16]
@@ -120,11 +118,12 @@ def Fetch():
     pc = hex(int(pc, 16) + int("0x4", 16))
     print(pc)
     return 
-def Execute(alu_op,reg_val1,reg_val2,offset):
 
-#Create a function named Execute() that executes computations with ALU. The register values
-#and sign-extended offset values retrieved/computed by Decode() function will be used for
-#computation.
+
+def Execute(alu_op,reg_val1,reg_val2,offset):
+    #Create a function named Execute() that executes computations with ALU. The register values
+    #and sign-extended offset values retrieved/computed by Decode() function will be used for
+    #computation.
 
     global alu_zero, branch_target
 
@@ -156,17 +155,29 @@ def Execute(alu_op,reg_val1,reg_val2,offset):
     #second step is to add the shift-left-2 output with the PC+4 value."
     #update this later(note to myself)
     #branch_target = shift_left_ofsset + value of PC+4
+
 def Mem():
+    global d_mem, registerfile
 
+    #load word
+    # R[rt] = M[R[rs]+SignExtImm]
+    if MemtoReg == 1 and MemRead == 1:
+        registerfile[rt] = d_mem[rs+physical_address]
 
-
+    #store word
+    # M[R[rs]+SignExtImm]=R[rt]    
+    if MemWrite == 1:
+        d_mem[rs+physical_address] = registerfile[rt] 
+    
     return
 
 def Writeback():
-
-
+    global total_clock_cycles 
+    total_clock_cycles = total_clock_cycles + 1
+    print("total_clock_cycles ", total_clock_cycles, ":")
 
     return
+
 
 #Control Unit Should be done, but the InstType is iffy cause in the slides there are two types
 def ControlUnit():
@@ -174,22 +185,27 @@ def ControlUnit():
 
     if instruction_type == "R":
         Branch = ALUSrc = MemWrite = MemtoReg = MemRead = Jump = 0
-        RegWrite = RegDst = InstType = 1
+        RegWrite = RegDst = 1
+        InstType = "10"
 
     if instruction_type == "I":
         if op_name == 'lw':
-            Branch = Jump = RegDst = InstType = MemWrite = 0
+            Branch = Jump = RegDst = MemWrite = 0
             ALUSrc = MemtoReg = MemRead = RegWrite = 1
+            InstType = "00"
         if op_name == 'sw':
-            Branch = MemtoReg = MemRead = Jump = RegWrite = RegDst = InstType = 0
+            Branch = MemtoReg = MemRead = Jump = RegWrite = RegDst = 0
             ALUSrc = MemWrite = 1
+            InstType = "00"
         if op_name == 'beq':
             ALUSrc = MemWrite = MemtoReg = MemRead = Jump = RegWrite = RegDst = 0
-            Branch = InstType = 1
+            Branch = 1
+            InstType = "01"
 
     if instruction_type == "J":
-        RegWrite = RegDst = Branch = ALUSrc = InstType = MemWrite = MemtoReg = MemRead = 0
+        RegWrite = RegDst = Branch = ALUSrc = MemWrite = MemtoReg = MemRead = 0
         Jump = 1
+        InstType = "00"
 
     return    
 
@@ -232,6 +248,10 @@ def main():
         if lines[i] != "": 
             Fetch()
             Decode()
+            #Execute()
+
+
+
             
     
 
