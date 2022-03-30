@@ -8,7 +8,8 @@ pc = next_pc = hi = lo = "0x0"
 total_clock_cycles = branch_target = jump_target = 0
 current_machine_code = op_name = instruction_type = ""
 rs = rt = rd = shamt = imm = funct = physical_address = ""
-
+alu_zero=0
+branch_target = 0
 #Control Switches
 RegWrite = RegDst = Branch = ALUSrc = InstType = MemWrite = MemtoReg = MemRead = Jump = 0
 
@@ -119,7 +120,42 @@ def Fetch():
     pc = hex(int(pc, 16) + int("0x4", 16))
     print(pc)
     return 
+def Execute(alu_op,reg_val1,reg_val2,offset):
 
+#Create a function named Execute() that executes computations with ALU. The register values
+#and sign-extended offset values retrieved/computed by Decode() function will be used for
+#computation.
+
+    global alu_zero, branch_target
+
+    comp_result = 0
+    
+    if alu_op == '0000':
+        comp_result = reg_val1 and reg_val2
+    if alu_op == '0001':
+        comp_result = reg_val1 or reg_val2
+    if alu_op == '0010':
+        comp_result = reg_val1 + reg_val2
+        if comp_result <= 0:
+            alu_zero = 1
+    if alu_op == '0110':
+        reg_val2 *= -1
+        comp_result = reg_val1 + reg_val2
+        if comp_result <= 0:
+            alu_zero = 1
+    if alu_op == '0111':
+        comp_result = reg_val1 - reg_val2
+        if comp_result < 0:
+            alu_zero = 1
+
+
+    offset_to_dec = int(offset,10)
+    shift_left_offset = offset_to_dec * 4
+    #need to do the last part
+    # the last thing needed is " The
+    #second step is to add the shift-left-2 output with the PC+4 value."
+    #update this later(note to myself)
+    #branch_target = shift_left_ofsset + value of PC+4
 def Mem():
 
 
