@@ -1,6 +1,3 @@
-#Where we are reading the machine code from. Changed later to user input
-filename = "sample_part2.txt"
-
 #Create global variables pc, hi, and lo
 pc = next_pc = hi = lo = 0
 
@@ -98,6 +95,7 @@ def Decode():
 
         if op_name == 'jal':
             d_mem[31] = next_pc         #Set $ra to next_pc if jal
+            Writeback(2, 0, 31, next_pc)
         
         jump_target = (int(imm,2)*4)    #Can't use the special calulations you want cause the "addresses" are not addresses
         print (jump_target) #Testing
@@ -176,16 +174,33 @@ def Mem():
     # R[rt] = M[R[rs]+SignExtImm]
     if MemtoReg == 1 and MemRead == 1:
         registerfile[rt] = d_mem[rs+physical_address]
+        Writeback(2, 0, rt, d_mem[rs+physical_address])
 
     #store word
     # M[R[rs]+SignExtImm]=R[rt]    
     if MemWrite == 1:
         d_mem[rs+physical_address] = registerfile[rt] 
-    
+        Writeback(3, 0, (rs+physical_address), registerfile[rt])
+
+
+
     return
 
-def Writeback():
-    
+def Writeback(type, next, register, modification):
+    Register_Dict = {    
+            '0':'$zero','1':'$at','2':'$v0','3':'$v1','4':'$a0','5':'$a1','6':'$a2',
+            '7':'$a3','8':'$t0','9':'$t1','10':'$t2','11':'$t3','12':'$t4','13':'$t5',
+            '14':'$t6','15':'$t7','16':'$s0', '17':'$s1','18':'$s2','19':'$s3','20':'$s4',
+            '21':'$s5', '22':'$s6','23':'$s7','24':'$t8','25':'$t9','26':'$k0','27':'$k1','28':'$gp',
+            '29':'$sp','31':'$fp', '31':'$ra'
+    }
+
+    if type == 1:
+        print("pc is modified to " + str(next))
+    if type == 2:
+        print(str(Register_Dict[str(register)]) + " is modified to " + str(hex(modification)))
+    if type == 3:
+        print("memory " + register + " is modified to " + modification)
 
     return
 
@@ -224,6 +239,10 @@ def ControlUnit():
 
 
 def main():
+    filename = "sample_part2.txt" #Testing
+
+    #filename = input("Enter the program file name to run: \n\n")
+
     #Take filename and open into list
     global lines, total_clock_cycles
     with open(filename) as file:
@@ -242,20 +261,22 @@ def main():
             machine_codes[i] = lines[j].strip()
             j = j + 1
 
-    print(machine_codes)
+    #print(machine_codes) #Testing
 
     #Loop where most of the code happens:
     for i in range(0,len(lines)):
         if lines[i] != "":  
             #moved clock counter here so that it only updates at the beginning
             total_clock_cycles = total_clock_cycles + 1
-            print("total_clock_cycles ", total_clock_cycles, ":")
+            print("\ntotal_clock_cycles "+ str(total_clock_cycles) + ":")
 
             Fetch()
             Decode()
             #Execute()
+        
 
-
+    print("\nprogram terminated: ")
+    print("total execution time is " + str(total_clock_cycles) + " cylces")
 
 if __name__ == "__main__":
     main()
