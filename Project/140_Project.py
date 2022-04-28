@@ -2,7 +2,7 @@
 filename = "sample_part2.txt"
 
 #Create global variables pc, hi, and lo
-pc = next_pc = hi = lo = "0x0"
+pc = next_pc = hi = lo = 0
 
 #More Globals
 total_clock_cycles = branch_target = jump_target = 0
@@ -13,15 +13,17 @@ rs = rt = rd = shamt = imm = funct = physical_address = ""
 RegWrite = RegDst = Branch = ALUSrc = MemWrite = MemtoReg = MemRead = Jump = 0
 InstType = "00"
 
-registerfile = [0] * 32
+registerfile = d_mem = [0] * 32
 
-#Putting these in so we can use actual hex values to get the key to to d-mem
-
+#Putting these in so we can use actual hex values to get the key to to d-mem. Update: got rid of hex
 #Got rid of type decoder definitions, only need decoder
 
-
 def Decode():
-    global op_name, instruction_type, jump_target, rs, rt, rd, shamt, imm, funct, physical_address
+    global op_name, instruction_type, jump_target, rs, rt, rd, shamt, imm, funct, physical_address, branch_target
+
+    #Reset Variables
+    branch_target = jump_target = 0
+    rs = rt = rd = shamt = imm = funct = physical_address = ""
 
     machine_instruction = current_machine_code
     #PARSING "OPCODE" STRING'S FIRST 6 CHARACTERS AND THEN CONVERTING IT TO HEX VIA BUILT IN FUNCTIONS TO CONTINUE ON AND PASS ON TO MORE FUNCTIONS
@@ -43,11 +45,9 @@ def Decode():
             '0x20':'add','0x21':'addu','0x24':'and','0x8':'jr','0x27':'nor','0x25':'or','0x2a':'slt',
             '0x2b':'sltu','0x0':'sll','0x2':'srl','0x22':'sub','0x23':'subu'
     }
-   
     op_name = ""
     instruction_type = ""
     #0 is operation name and column 1 is hex value of opcode for I type and j type and column 1 is funct in hex if r type
-
     if opcode_hex == hex(0):
         for key in R_Dict:
             if funct_hex == key:
@@ -69,9 +69,9 @@ def Decode():
             op_name = "N/A"
            
     ControlUnit()
-
-    print("\nInstruction Type: " + instruction_type)   
-    print("Operation: " + op_name) 
+    
+    print("\nInstruction Type: " + instruction_type)    #Testing
+    print("Operation: " + op_name)                      #Testing
     
     if instruction_type == 'I':
         rs = machine_instruction[6:11]
@@ -84,16 +84,24 @@ def Decode():
             physical_address = "0000" + imm
         else:
             physical_address = "1111" + imm
+
+        branch_target = next_pc + (int(imm,2)*4)        #Can't use the special calulations you want cause the "addresses" are not addresses
+        
+        print ("Branch Target: " + str(branch_target)) #Testing
+
+        return
         
 
 
     if instruction_type == 'J':
         imm = machine_instruction[-26:]
+
+        if op_name == 'jal':
+            d_mem[31] = next_pc         #Set $ra to next_pc if jal
         
-        #Shift-Left-2: 
-        print(next_pc)
-        jump_target = next_pc + imm + "00" #Very Confused Here
-        print(jump_target)
+        jump_target = (int(imm,2)*4)    #Can't use the special calulations you want cause the "addresses" are not addresses
+        print (jump_target) #Testing
+        return
 
 
     if instruction_type == 'R':
@@ -102,7 +110,10 @@ def Decode():
         rd = machine_instruction[16:21]
         shamt = machine_instruction[21:26]
         funct = machine_instruction[-6:]
-        
+
+        return
+    
+    return
     
     
 
@@ -113,10 +124,12 @@ def Decode():
 
 def Fetch():
     global current_machine_code, pc, next_pc
-    current_machine_code = machine_codes[int(pc,16)]
-    next_pc = hex(int(pc, 16) + int("0x4", 16))
-    pc = hex(int(pc, 16) + int("0x4", 16))
-    print(pc)
+    print("") #Testing
+    print("Current PC: " + str(pc)) #Testing
+    current_machine_code = machine_codes[pc]
+    next_pc = pc + 4
+    pc = pc + 4 #PC here is temporary, actual pc is chosen later
+    print("Next PC: " + str(pc)) #Testing
     return 
 
 
@@ -213,16 +226,6 @@ def ControlUnit():
 
 
 def main():
-
-    #Make d-mem for memory entries (global)
-    global d_mem
-    d_mem = {}
-    for i in range(0,32):
-        d_mem[i] = 0
-
-    #print(d_mem)
-
-
     #Take filename and open into list
     global lines
     with open(filename) as file:
@@ -241,7 +244,7 @@ def main():
             machine_codes[i] = lines[j].strip()
             j = j + 1
 
-    #print(machine_codes)
+    print(machine_codes)
 
     #Loop where most of the code happens:
     for i in range(0,len(lines)):
@@ -250,10 +253,6 @@ def main():
             Decode()
             #Execute()
 
-
-
-            
-    
 
 
 if __name__ == "__main__":
