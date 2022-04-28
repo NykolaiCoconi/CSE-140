@@ -67,8 +67,8 @@ def Decode():
            
     ControlUnit()
     
-    print("\nInstruction Type: " + instruction_type)    #Testing
-    print("Operation: " + op_name)                      #Testing
+    #print("\nInstruction Type: " + instruction_type)    #Testing
+    #print("Operation: " + op_name)                      #Testing
     
     if instruction_type == 'I':
         rs = machine_instruction[6:11]
@@ -84,7 +84,7 @@ def Decode():
 
         branch_target = next_pc + (int(imm,2)*4)        #Can't use the special calulations you want cause the "addresses" are not addresses
         
-        print ("Branch Target: " + str(branch_target)) #Testing
+        #print ("Branch Target: " + str(branch_target)) #Testing
 
         return
         
@@ -98,7 +98,7 @@ def Decode():
             Writeback(2, 0, 31, next_pc)
         
         jump_target = (int(imm,2)*4)    #Can't use the special calulations you want cause the "addresses" are not addresses
-        print (jump_target) #Testing
+        #print (jump_target) #Testing
         return
 
 
@@ -122,7 +122,7 @@ def Decode():
 
 def Fetch():
     global current_machine_code, pc, next_pc
-    print("") #Testing
+    #print("") #Testing
     print("Current PC: " + str(pc)) #Testing
     current_machine_code = machine_codes[pc]
     next_pc = pc + 4
