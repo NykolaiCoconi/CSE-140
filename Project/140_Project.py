@@ -185,9 +185,7 @@ def Mem():
     return
 
 def Writeback():
-    global total_clock_cycles 
-    total_clock_cycles = total_clock_cycles + 1
-    print("total_clock_cycles ", total_clock_cycles, ":")
+    
 
     return
 
@@ -227,7 +225,7 @@ def ControlUnit():
 
 def main():
     #Take filename and open into list
-    global lines
+    global lines, total_clock_cycles
     with open(filename) as file:
         lines = file.readlines()
     #print(lines)
@@ -248,7 +246,11 @@ def main():
 
     #Loop where most of the code happens:
     for i in range(0,len(lines)):
-        if lines[i] != "": 
+        if lines[i] != "":  
+            #moved clock counter here so that it only updates at the beginning
+            total_clock_cycles = total_clock_cycles + 1
+            print("total_clock_cycles ", total_clock_cycles, ":")
+
             Fetch()
             Decode()
             #Execute()
