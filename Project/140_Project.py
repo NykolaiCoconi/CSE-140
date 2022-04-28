@@ -78,9 +78,9 @@ def Decode():
         #Used for Sign Extension
         check = imm[0]
         if check == "0":
-            physical_address = "0000" + imm
+            physical_address = "0000000000000000" + imm
         else:
-            physical_address = "1111" + imm
+            physical_address = "1111111111111111" + imm
 
         branch_target = next_pc + (int(imm,2)*4)        #Can't use the special calulations you want cause the "addresses" are not addresses
         
