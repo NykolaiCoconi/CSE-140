@@ -8,7 +8,7 @@ rs = rt = rd = shamt = imm = funct = physical_address = ""
 
 #Control Switches
 RegWrite = RegDst = Branch = ALUSrc = MemWrite = MemtoReg = MemRead = Jump = 0
-InstType = "00"
+alu_op = "000"
 
 registerfile = d_mem = [0] * 32
 
@@ -140,20 +140,20 @@ def Execute(alu_op,reg_val1,reg_val2,offset):
 
     comp_result = 0
     
-    if alu_op == '0000':
+    if alu_op == '000':
         comp_result = reg_val1 and reg_val2
-    if alu_op == '0001':
+    if alu_op == '001':
         comp_result = reg_val1 or reg_val2
-    if alu_op == '0010':
+    if alu_op == '010':
         comp_result = reg_val1 + reg_val2
         if comp_result <= 0:
             alu_zero = 1
-    if alu_op == '0110':
+    if alu_op == '110':
         reg_val2 *= -1
         comp_result = reg_val1 + reg_val2
         if comp_result <= 0:
             alu_zero = 1
-    if alu_op == '0111':
+    if alu_op == '111':
         comp_result = reg_val1 - reg_val2
         if comp_result < 0:
             alu_zero = 1
@@ -207,31 +207,40 @@ def Writeback(type, next, register, modification):
 
 #Control Unit Should be done, but the InstType is iffy cause in the slides there are two types
 def ControlUnit():
-    global RegWrite, RegDst, Branch, ALUSrc, InstType, MemWrite, MemtoReg, MemRead, Jump
-
+    global RegWrite, RegDst, Branch, ALUSrc, InstType, MemWrite, MemtoReg, MemRead, Jump, alu_op
+    alu_op = "000"
+    
     if instruction_type == "R":
         Branch = ALUSrc = MemWrite = MemtoReg = MemRead = Jump = 0
         RegWrite = RegDst = 1
         InstType = "10"
+        if op_name == "and":
+            alu_op = "000"
+        if op_name == "or":
+            alu_op = "001"  
+        if op_name == "add":
+            alu_op = "010"
+        if op_name == "slt":
+            alu_op = "111"    
 
     if instruction_type == "I":
         if op_name == 'lw':
             Branch = Jump = RegDst = MemWrite = 0
             ALUSrc = MemtoReg = MemRead = RegWrite = 1
-            InstType = "00"
+            alu_op = "000"
         if op_name == 'sw':
             Branch = MemtoReg = MemRead = Jump = RegWrite = RegDst = 0
             ALUSrc = MemWrite = 1
-            InstType = "00"
+            alu_op = "000"
         if op_name == 'beq':
             ALUSrc = MemWrite = MemtoReg = MemRead = Jump = RegWrite = RegDst = 0
             Branch = 1
-            InstType = "01"
+            alu_op = "001"
 
     if instruction_type == "J":
         RegWrite = RegDst = Branch = ALUSrc = MemWrite = MemtoReg = MemRead = 0
         Jump = 1
-        InstType = "00"
+        alu_op = "000"
 
     return    
 
