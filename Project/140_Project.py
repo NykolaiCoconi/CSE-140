@@ -7,8 +7,10 @@ current_machine_code = op_name = instruction_type = ""
 rs = rt = rd = shamt = imm = funct = physical_address = ""
 
 #Control Switches
-RegWrite = RegDst = Branch = ALUSrc = MemWrite = MemtoReg = MemRead = Jump = 0
+MemtoReg = RegDst = "00"
+RegWrite = Branch = ALUSrc = MemWrite = MemRead = Jump = 0
 alu_op = "000"
+alu_cntrl = "0000"
 
 registerfile = d_mem = [0] * 32
 
@@ -69,7 +71,7 @@ def Decode():
     
     #print("\nInstruction Type: " + instruction_type)    #Testing
     #print("Operation: " + op_name)                      #Testing
-    
+
     if instruction_type == 'I':
         rs = machine_instruction[6:11]
         rt = machine_instruction[11:16]
@@ -124,7 +126,7 @@ def Fetch():
     global current_machine_code, pc, next_pc
     #print("") #Testing
     print("Current PC: " + str(pc)) #Testing
-    current_machine_code = machine_codes[pc]
+    current_machine_code = machine_codes[(pc)]
     next_pc = pc + 4
     pc = pc + 4 #PC here is temporary, actual pc is chosen later
     print("Next PC: " + str(pc)) #Testing
@@ -161,6 +163,7 @@ def Execute(alu_op,reg_val1,reg_val2,offset):
 
     offset_to_dec = int(offset,10)
     shift_left_offset = offset_to_dec * 4
+    branch_target = shift_left_offset + next_pc
     #need to do the last part
     # the last thing needed is " The
     #second step is to add the shift-left-2 output with the PC+4 value."
@@ -187,6 +190,7 @@ def Mem():
     return
 
 def Writeback(type, next, register, modification):
+    global total_clock_cycles
     Register_Dict = {    
             '0':'$zero','1':'$at','2':'$v0','3':'$v1','4':'$a0','5':'$a1','6':'$a2',
             '7':'$a3','8':'$t0','9':'$t1','10':'$t2','11':'$t3','12':'$t4','13':'$t5',
@@ -194,53 +198,71 @@ def Writeback(type, next, register, modification):
             '21':'$s5', '22':'$s6','23':'$s7','24':'$t8','25':'$t9','26':'$k0','27':'$k1','28':'$gp',
             '29':'$sp','31':'$fp', '31':'$ra'
     }
-
     if type == 1:
         print("pc is modified to " + str(next))
     if type == 2:
         print(str(Register_Dict[str(register)]) + " is modified to " + str(hex(modification)))
     if type == 3:
         print("memory " + register + " is modified to " + modification)
+    if type == 4:
+        total_clock_cycles = total_clock_cycles + 1
+        print("\ntotal_clock_cycles "+ str(total_clock_cycles) + ":")
+    
 
     return
 
 
 #Control Unit Should be done, but the InstType is iffy cause in the slides there are two types
 def ControlUnit():
-    global RegWrite, RegDst, Branch, ALUSrc, InstType, MemWrite, MemtoReg, MemRead, Jump, alu_op
-    alu_op = "000"
+    global RegWrite, RegDst, Branch, ALUSrc, MemWrite, MemtoReg, MemRead, Jump, alu_op
+    alu_op = "00"
     
     if instruction_type == "R":
-        Branch = ALUSrc = MemWrite = MemtoReg = MemRead = Jump = 0
-        RegWrite = RegDst = 1
-        InstType = "10"
-        if op_name == "and":
-            alu_op = "000"
-        if op_name == "or":
-            alu_op = "001"  
-        if op_name == "add":
-            alu_op = "010"
-        if op_name == "slt":
-            alu_op = "111"    
+        RegDst = "01"
+        MemtoReg = "00"
+        Branch = ALUSrc = MemWrite =  MemRead = Jump = 0
+        RegWrite = 1
+        alu_op = "10"   
 
     if instruction_type == "I":
         if op_name == 'lw':
-            Branch = Jump = RegDst = MemWrite = 0
-            ALUSrc = MemtoReg = MemRead = RegWrite = 1
-            alu_op = "000"
+            RegDst = "00"
+            MemtoReg = "01"
+            Branch = Jump = MemWrite = 0
+            ALUSrc = MemRead = RegWrite = 1
+            alu_op = "00"
         if op_name == 'sw':
-            Branch = MemtoReg = MemRead = Jump = RegWrite = RegDst = 0
+            RegDst = "00"
+            MemtoReg = "00"
+            Branch = MemRead = Jump = RegWrite = 0
             ALUSrc = MemWrite = 1
-            alu_op = "000"
+            alu_op = "00"
         if op_name == 'beq':
-            ALUSrc = MemWrite = MemtoReg = MemRead = Jump = RegWrite = RegDst = 0
+            RegDst = "00"
+            MemtoReg = "00"
+            ALUSrc = MemWrite = MemRead = Jump = RegWrite = 0
             Branch = 1
-            alu_op = "001"
+            alu_op = "01"
 
     if instruction_type == "J":
-        RegWrite = RegDst = Branch = ALUSrc = MemWrite = MemtoReg = MemRead = 0
-        Jump = 1
-        alu_op = "000"
+        if op_name == "j":
+            RegDst = "00"
+            MemtoReg = "00"
+            RegWrite = Branch = ALUSrc = MemWrite = MemRead = 0
+            Jump = 1
+            alu_op = "00"
+        if op_name == "jal":
+            RegDst = "10"
+            MemtoReg = "10"
+            Branch = ALUSrc = MemWrite = MemRead = 0
+            RegWrite = Jump = 1
+            alu_op = "00"
+    
+    
+
+
+
+
 
     return    
 
@@ -248,19 +270,18 @@ def ControlUnit():
 
 
 def main():
+    global lines, total_clock_cycles, machine_codes
     filename = "sample_part2.txt" #Testing
 
     #filename = input("Enter the program file name to run: \n\n")
 
     #Take filename and open into list
-    global lines, total_clock_cycles
     with open(filename) as file:
         lines = file.readlines()
     #print(lines)
 
     #Put list into int style opening where increments are by 4
     #Must be dictionary to have empty spaces
-    global machine_codes
     machine_codes = {}
     j=0
     for i in range(0,len(lines)*4):
@@ -275,9 +296,7 @@ def main():
     #Loop where most of the code happens:
     for i in range(0,len(lines)):
         if lines[i] != "":  
-            #moved clock counter here so that it only updates at the beginning
-            total_clock_cycles = total_clock_cycles + 1
-            print("\ntotal_clock_cycles "+ str(total_clock_cycles) + ":")
+            Writeback(4, 0, 0, 0) #Clock Cycle Counter
 
             Fetch()
             Decode()
