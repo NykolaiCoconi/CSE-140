@@ -161,12 +161,12 @@ def Execute(alu_op,reg_val1,reg_val2,offset):
         comp_result = reg_val1 or reg_val2
     if alu_cntrl == '0010':
         comp_result = reg_val1 + reg_val2
-        if comp_result <= 0:
+        if comp_result == 0:
             alu_zero = 1
     if alu_cntrl == '0110':
         reg_val2 *= -1
         comp_result = reg_val1 + reg_val2
-        if comp_result <= 0:
+        if comp_result == 0:
             alu_zero = 1
     if alu_cntrl == '0111':
         comp_result = reg_val1 - reg_val2
