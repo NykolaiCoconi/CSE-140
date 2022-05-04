@@ -73,8 +73,9 @@ def Decode():
     #print("Operation: " + op_name)                      #Testing
 
     if instruction_type == 'I':
-        rs = machine_instruction[6:11]
-        rt = machine_instruction[11:16]
+        
+        rs = int(machine_instruction[6:11],2)
+        rt = int(machine_instruction[11:16],2)
         imm = machine_instruction[16:32]
 
         #Used for Sign Extension
@@ -114,9 +115,9 @@ def Decode():
 
 
     if instruction_type == 'R':
-        rs = machine_instruction[6:11]
-        rt = machine_instruction[11:16]
-        rd = machine_instruction[16:21]
+        rs = int(machine_instruction[6:11],2)
+        rt = int(machine_instruction[11:16],2)
+        rd = int(machine_instruction[16:21],2)
         shamt = machine_instruction[21:26]
         funct = machine_instruction[-6:]
 
@@ -142,37 +143,74 @@ def Fetch():
     return 
 
 
-def Execute(alu_op,reg_val1,reg_val2,offset):
+def Execute():
     #Create a function named Execute() that executes computations with ALU. The register values
     #and sign-extended offset values retrieved/computed by Decode() function will be used for
     #computation.
-
     global alu_zero, branch_target
 
     comp_result = 0
-    
+
+    #and
     if alu_cntrl == '0000':
-        comp_result = reg_val1 and reg_val2
+        comp_result = registerfile[rs] & registerfile[rt]
+        registerfile[rd] = comp_result
+        Writeback(2,0,registerfile[rd],hex(comp_result))
+        if comp_result == 0:
+            alu_zero = 1
+    #or
     if alu_cntrl == '0001':
-        comp_result = reg_val1 or reg_val2
+        comp_result = registerfile[rs] | registerfile[rt]
+        registerfile[rd] = comp_result
+        Writeback(2,0,registerfile[rd],hex(comp_result))
+        if comp_result == 0:
+            alu_zero = 1
+    #add
     if alu_cntrl == '0010':
-        comp_result = reg_val1 + reg_val2
+        #SW
+        if ALUSrc == 1 and MemWrite == 1:
+            Mem()
+            return
+        #LW
+        if MemtoReg == '01':
+            Mem()
+            return
+        comp_result = registerfile[rs] + registerfile[rt]
+        registerfile[rd] = comp_result
+        Writeback(2,0,registerfile[rd],hex(comp_result))
         if comp_result == 0:
             alu_zero = 1
+    #sub/beq
     if alu_cntrl == '0110':
-        reg_val2 *= -1
-        comp_result = reg_val1 + reg_val2
+        comp_result = registerfile[rs] - registerfile[rt]
+        registerfile[rd] = comp_result
+        Writeback(2,0,registerfile[rd],hex(comp_result))
         if comp_result == 0:
             alu_zero = 1
+    #slt
     if alu_cntrl == '0111':
-        comp_result = reg_val1 - reg_val2
-        if comp_result < 0:
+        if registerfile[rs] < registerfile[rt]:
+            alu_zero = 1
+        else:
+            alu_zero = 0
+        registerfile[rd] = hex(alu_zero)
+        print(hex(alu_zero))
+        Writeback(2,0,registerfile[rd],hex(alu_zero))
+            
+    #NOR
+    if alu_cntrl == '1100':
+        comp_result = ~(registerfile[rs] | registerfile[rt])
+        registerfile[rd] = comp_result
+        Writeback(2,0,registerfile[rd],hex(comp_result))
+        if comp_result == 0:
             alu_zero = 1
 
 
-    offset_to_dec = int(offset,10)
-    shift_left_offset = offset_to_dec * 4
-    branch_target = shift_left_offset + next_pc
+   
+    #offset_to_dec = int(sign_extension,10)
+    #shift_left_offset = offset_to_dec * 4
+    #branch_target = shift_left_offset + next_pc
+
     #need to do the last part
     # the last thing needed is " The
     #second step is to add the shift-left-2 output with the PC+4 value."
@@ -181,21 +219,18 @@ def Execute(alu_op,reg_val1,reg_val2,offset):
 
 def Mem():
     global d_mem, registerfile
-
     #load word
     # R[rt] = M[R[rs]+SignExtImm]
     if MemtoReg == 1 and MemRead == 1:
-        registerfile[rt] = d_mem[rs+sign_extension]
-        Writeback(2, 0, rt, d_mem[rs+sign_extension])
-
+        print(int(registerfile[rs],2)+int(sign_extension,2))
+        registerfile[rt] = d_mem[int(registerfile[rs],2)+int(sign_extension,2)]
+        #Writeback(2, 0, rt, d_mem[int(registerfile[rs],2)+int(sign_extension,2)])
     #store word
     # M[R[rs]+SignExtImm]=R[rt]    
     if MemWrite == 1:
-        d_mem[rs+sign_extension] = registerfile[rt] 
-        Writeback(3, 0, (rs+sign_extension), registerfile[rt])
-
-
-
+        print(int(registerfile[rs],2)+int(sign_extension,2))
+        d_mem[int(registerfile[rs],2)+int(sign_extension,2)] = registerfile[rt] 
+        #Writeback(3, 0, (int(registerfile[rs],2)+int(sign_extension,2)), registerfile[rt])
     return
 
 def Writeback(type, next, register, modification):
@@ -210,7 +245,7 @@ def Writeback(type, next, register, modification):
     if type == 1:
         print("pc is modified to " + str(next))
     if type == 2:
-        print(str(Register_Dict[str(register)]) + " is modified to " + str(hex(modification)))
+        print(str(Register_Dict[register]) + " is modified to " + str(hex(modification)))
     if type == 3:
         print("memory " + register + " is modified to " + modification)
     if type == 4:
@@ -294,7 +329,7 @@ def ControlUnit():
 
 def main():
     global lines, total_clock_cycles, machine_codes
-    filename = "sample_part2.txt" #Testing
+    filename = "sample_part1.txt" #Testing
 
     #filename = input("Enter the program file name to run: \n\n")
 
@@ -323,7 +358,7 @@ def main():
 
             Fetch()
             Decode()
-            #Execute()
+            Execute()
         
 
     print("\nprogram terminated: ")
