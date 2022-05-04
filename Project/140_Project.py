@@ -185,14 +185,14 @@ def Mem():
     #load word
     # R[rt] = M[R[rs]+SignExtImm]
     if MemtoReg == 1 and MemRead == 1:
-        registerfile[rt] = d_mem[rs+physical_address]
-        Writeback(2, 0, rt, d_mem[rs+physical_address])
+        registerfile[rt] = d_mem[rs+sign_extension]
+        Writeback(2, 0, rt, d_mem[rs+sign_extension])
 
     #store word
     # M[R[rs]+SignExtImm]=R[rt]    
     if MemWrite == 1:
-        d_mem[rs+physical_address] = registerfile[rt] 
-        Writeback(3, 0, (rs+physical_address), registerfile[rt])
+        d_mem[rs+sign_extension] = registerfile[rt] 
+        Writeback(3, 0, (rs+sign_extension), registerfile[rt])
 
 
 
