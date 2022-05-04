@@ -4,7 +4,7 @@ pc = next_pc = hi = lo = 0
 #More Globals
 total_clock_cycles = branch_target = jump_target = 0
 current_machine_code = op_name = instruction_type = ""
-rs = rt = rd = shamt = imm = funct = physical_address = ""
+rs = rt = rd = shamt = imm = funct = sign_extension = ""
 
 #Control Switches
 MemtoReg = RegDst = "00"
@@ -18,11 +18,11 @@ registerfile = d_mem = [0] * 32
 #Got rid of type decoder definitions, only need decoder
 
 def Decode():
-    global op_name, instruction_type, jump_target, rs, rt, rd, shamt, imm, funct, physical_address, branch_target
+    global op_name, instruction_type, jump_target, rs, rt, rd, shamt, imm, funct, sign_extension, branch_target
 
     #Reset Variables
     branch_target = jump_target = 0
-    rs = rt = rd = shamt = imm = funct = physical_address = ""
+    rs = rt = rd = shamt = imm = funct = sign_extension = ""
 
     machine_instruction = current_machine_code
     #PARSING "OPCODE" STRING'S FIRST 6 CHARACTERS AND THEN CONVERTING IT TO HEX VIA BUILT IN FUNCTIONS TO CONTINUE ON AND PASS ON TO MORE FUNCTIONS
@@ -80,13 +80,9 @@ def Decode():
         #Used for Sign Extension
         check = imm[0]
         if check == "0":
-            physical_address = "0000000000000000" + imm
+            sign_extension = "0000000000000000" + imm
         else:
-            physical_address = "1111111111111111" + imm
-
-        branch_target = next_pc + (int(imm,2)*4)        #Can't use the special calulations you want cause the "addresses" are not addresses
-        
-        #print ("Branch Target: " + str(branch_target)) #Testing
+            sign_extension = "1111111111111111" + imm
 
         return
         
