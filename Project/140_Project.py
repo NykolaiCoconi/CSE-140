@@ -99,9 +99,21 @@ def Decode():
             registerfile[31] = next_pc         #Set $ra to next_pc if jal
             Writeback(2, 0, 31, next_pc)
         
-        
-        jump_target = (int(imm,2)*4)    #Can't use the special calulations you want cause the "addresses" are not addresses
-        #print (jump_target) #Testing
+        #Expand next_pc into a 32 bit address
+        next_pc_binary = bin(next_pc).replace("0b", "")
+        while len(next_pc_binary) < 32:
+            next_pc_binary = "0" + next_pc_binary
+
+        #Take first 4 bits of next_pc
+        significant_bits = next_pc_binary[:4]
+        #Multiply the immediate by 4
+        mult_imm = imm + "00"
+        #Concatnate significant bits of next_pc and the immediate * 4
+        jump_target_bin = significant_bits + mult_imm
+        #Change binary to decimal for target address
+        jump_target = int(jump_target_bin,2)
+        print ("Jump Target: " + str(jump_target)) #Testing
+
         return
 
 
