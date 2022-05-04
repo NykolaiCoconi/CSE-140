@@ -147,7 +147,7 @@ def Execute():
     #Create a function named Execute() that executes computations with ALU. The register values
     #and sign-extended offset values retrieved/computed by Decode() function will be used for
     #computation.
-    global alu_zero, branch_target
+    global alu_zero, branch_target, registerfile
 
     comp_result = 0
 
