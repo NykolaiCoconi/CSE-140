@@ -96,8 +96,9 @@ def Decode():
         imm = machine_instruction[-26:]
 
         if op_name == 'jal':
-            d_mem[31] = next_pc         #Set $ra to next_pc if jal
+            registerfile[31] = next_pc         #Set $ra to next_pc if jal
             Writeback(2, 0, 31, next_pc)
+        
         
         jump_target = (int(imm,2)*4)    #Can't use the special calulations you want cause the "addresses" are not addresses
         #print (jump_target) #Testing
@@ -142,20 +143,20 @@ def Execute(alu_op,reg_val1,reg_val2,offset):
 
     comp_result = 0
     
-    if alu_op == '000':
+    if alu_cntrl == '0000':
         comp_result = reg_val1 and reg_val2
-    if alu_op == '001':
+    if alu_cntrl == '0001':
         comp_result = reg_val1 or reg_val2
-    if alu_op == '010':
+    if alu_cntrl == '0010':
         comp_result = reg_val1 + reg_val2
         if comp_result <= 0:
             alu_zero = 1
-    if alu_op == '110':
+    if alu_cntrl == '0110':
         reg_val2 *= -1
         comp_result = reg_val1 + reg_val2
         if comp_result <= 0:
             alu_zero = 1
-    if alu_op == '111':
+    if alu_cntrl == '0111':
         comp_result = reg_val1 - reg_val2
         if comp_result < 0:
             alu_zero = 1
@@ -214,9 +215,10 @@ def Writeback(type, next, register, modification):
 
 #Control Unit Should be done, but the InstType is iffy cause in the slides there are two types
 def ControlUnit():
-    global RegWrite, RegDst, Branch, ALUSrc, MemWrite, MemtoReg, MemRead, Jump, alu_op
+    global RegWrite, RegDst, Branch, ALUSrc, MemWrite, MemtoReg, MemRead, Jump, alu_op, funct, alu_cntrl
     alu_op = "00"
-    
+    alu_cntrl = "0000"
+
     if instruction_type == "R":
         RegDst = "01"
         MemtoReg = "00"
@@ -258,11 +260,24 @@ def ControlUnit():
             RegWrite = Jump = 1
             alu_op = "00"
     
-    
-
-
-
-
+    #Take alu_op and funct of the opcode and get the alu_cntrl for execute to use
+    if alu_op == "00":
+        alu_cntrl = "0010"
+    if alu_op == "01":
+        alu_cntrl = "0110"
+    if alu_op == "10":
+        if funct == "100000":   #Add
+            alu_cntrl = "0010"
+        if funct == "100010":   #subtract
+            alu_cntrl = "0110"
+        if funct == "100100":   #and
+            alu_cntrl = "0000"
+        if funct == "100101":   #or
+            alu_cntrl = "0001"
+        if funct == "101010":   #slt
+            alu_cntrl = "0111"
+        if funct == "100111":   #nor
+            alu_cntrl = "1100"
 
     return    
 
