@@ -180,18 +180,20 @@ def Execute():
 
     #and
     if alu_cntrl == '0000':
-        comp_result = int(registerfile[rs],16) & int(registerfile[rt],16)
-        registerfile[rd] = hex(comp_result)
-        Writeback(2,0,rd,hex(comp_result))
-        if comp_result == 0:
-            alu_zero = 1
+        if RegDst == "01" and MemtoReg == "00" and Branch == ALUSrc == MemWrite ==  MemRead == Jump == 0 and RegWrite == 1:
+            comp_result = int(registerfile[rs],16) & int(registerfile[rt],16)
+            registerfile[rd] = hex(comp_result)
+            Writeback(2,0,rd,hex(comp_result))
+            if comp_result == 0:
+                alu_zero = 1
     #or
     if alu_cntrl == '0001':
-        comp_result = int(registerfile[rs],16) | int(registerfile[rt],16)
-        registerfile[rd] = hex(comp_result)
-        Writeback(2,0,rd,hex(comp_result))
-        if comp_result == 0:
-            alu_zero = 1
+        if RegDst == "01" and MemtoReg == "00" and Branch == ALUSrc == MemWrite ==  MemRead == Jump == 0 and RegWrite == 1:
+            comp_result = int(registerfile[rs],16) | int(registerfile[rt],16)
+            registerfile[rd] = hex(comp_result)
+            Writeback(2,0,rd,hex(comp_result))
+            if comp_result == 0:
+                alu_zero = 1
     #add
     if alu_cntrl == '0010':
         #Jal
@@ -383,9 +385,9 @@ def ControlUnit():
 
 def main():
     global lines, total_clock_cycles, machine_codes, registerfile, d_mem
-    filename = "sample_part2.txt" #Testing
+    #filename = "sample_part1.txt" #Testing
 
-    #filename = input("Enter the program file name to run: \n\n")
+    filename = input("Enter the program file name to run: \n\n")
 
     #Take filename and open into list
     with open(filename) as file:
