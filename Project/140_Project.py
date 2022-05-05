@@ -194,35 +194,41 @@ def Execute():
             alu_zero = 1
     #add
     if alu_cntrl == '0010':
-        if Jump == 1 and RegWrite == 1:
-            Fetch(4)
+        #Jal
+        if RegDst == "10" and MemtoReg == "10" and Branch == ALUSrc == MemWrite == MemRead == 0 and RegWrite == Jump == 1:
+            Fetch(2)
             return
-        if Jump == 1 and RegWrite == 0:
+        #J
+        if RegDst == "00" and MemtoReg == "00" and RegWrite == Branch == ALUSrc == MemWrite == MemRead == 0 and Jump == 1:
             Fetch(2)
             return
         #SW
-        if ALUSrc == 1 and MemWrite == 1:
+        if RegDst == "00" and MemtoReg == "00" and Branch == MemRead == Jump == RegWrite == 0 and ALUSrc == MemWrite == 1:
             Mem()
             Fetch(1)
             return
         #LW
-        if MemtoReg == '01':
+        if RegDst == "00" and MemtoReg == "01" and Branch == Jump == MemWrite == 0 and ALUSrc == MemRead == RegWrite == 1:
             Mem()
             Fetch(1)
             return
-        comp_result = int(registerfile[rs],16) + int(registerfile[rt],16)
-        registerfile[rd] = hex(comp_result)
-        Writeback(2,0,rd,hex(comp_result))
-        if comp_result == 0:
-            alu_zero = 1
+        #Add
+        if RegDst == "01" and MemtoReg == "00" and Branch == ALUSrc == MemWrite ==  MemRead == Jump == 0 and RegWrite == 1:
+            comp_result = int(registerfile[rs],16) + int(registerfile[rt],16)
+            registerfile[rd] = hex(comp_result)
+            Writeback(2,0,rd,hex(comp_result))
+            if comp_result == 0:
+                alu_zero = 1
 
     #sub/beq
     if alu_cntrl == '0110':
         comp_result = int(registerfile[rs],16) - int(registerfile[rt],16)
-        if Branch == 0:
+        #Sub
+        if RegDst == "01" and MemtoReg == "00" and Branch == ALUSrc == MemWrite ==  MemRead == Jump == 0 and RegWrite == 1:
             registerfile[rd] = hex(comp_result)
             Writeback(2,0,rd,hex(comp_result))
-        if comp_result == 0 and Branch == 1:
+        #Beq
+        if comp_result == 0 and RegDst == "00" and MemtoReg == "00" and ALUSrc == MemWrite == MemRead == Jump == RegWrite == 0 and Branch == 1:
             offset_to_dec = int(sign_extension,2)
             shift_left_offset = offset_to_dec * 4
             alu_zero = 1
@@ -232,25 +238,29 @@ def Execute():
         
     #slt
     if alu_cntrl == '0111':
-        if int(registerfile[rs],16) < int(registerfile[rt],16):
-            alu_zero = 1
-        else:
-            alu_zero = 0
-        registerfile[rd] = hex(alu_zero)
-        #print(hex(alu_zero)    #Testing
-        Writeback(2,0,rd,hex(alu_zero))
+        if RegDst == "01" and MemtoReg == "00" and Branch == ALUSrc == MemWrite ==  MemRead == Jump == 0 and RegWrite == 1:
+            if int(registerfile[rs],16) < int(registerfile[rt],16):
+                alu_zero = 1
+            else:
+                alu_zero = 0
+            registerfile[rd] = hex(alu_zero)
+            #print(hex(alu_zero)    #Testing
+            Writeback(2,0,rd,hex(alu_zero))
             
     #NOR
     if alu_cntrl == '1100':
-        comp_result = ~(int(registerfile[rs],16) | int(registerfile[rt],16))
-        registerfile[rd] = hex(comp_result)
-        Writeback(2,0,rd,hex(comp_result))
-        if comp_result == 0:
-            alu_zero = 1
+        if RegDst == "01" and MemtoReg == "00" and Branch == ALUSrc == MemWrite ==  MemRead == Jump == 0 and RegWrite == 1:
+            comp_result = ~(int(registerfile[rs],16) | int(registerfile[rt],16))
+            registerfile[rd] = hex(comp_result)
+            Writeback(2,0,rd,hex(comp_result))
+            if comp_result == 0:
+                alu_zero = 1
 
     #jr
     if alu_cntrl == '0011':
-        Fetch(4)
+        if RegDst == "01" and MemtoReg == "00" and Branch == ALUSrc == MemWrite ==  MemRead == Jump == 0 and RegWrite == 1:
+            Fetch(4)
+            return
 
     Fetch(1)
     return
@@ -347,11 +357,11 @@ def ControlUnit():
     
     #Take alu_op and funct of the opcode and get the alu_cntrl for execute to use
     if alu_op == "00":
-        alu_cntrl = "0010"
+        alu_cntrl = "0010"  #jump, jump/link, sw, lw
     if alu_op == "01":
-        alu_cntrl = "0110"
+        alu_cntrl = "0110"  #beq
     if alu_op == "10":
-        if funct == "100000":   #Add
+        if funct == "100000":   #add
             alu_cntrl = "0010"
         if funct == "100010":   #subtract
             alu_cntrl = "0110"
@@ -408,7 +418,7 @@ def main():
         registerfile[16] = '0x20'
         registerfile[4] = '0x5'
         registerfile[5] = '0x2'
-        registerfile[6] = '0xa'
+        registerfile[7] = '0xa'
 
     #Loop where the code happens:
     #Get first binary line, all others will be chosen in execute and choice sent to fetch
