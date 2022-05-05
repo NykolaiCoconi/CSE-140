@@ -5,6 +5,7 @@ pc = next_pc = hi = lo = 0
 total_clock_cycles = branch_target = jump_target = 0
 current_machine_code = op_name = instruction_type = ""
 rs = rt = rd = shamt = imm = funct = sign_extension = ""
+end_check = 0
 
 #Control Switches
 MemtoReg = RegDst = "00"
@@ -12,7 +13,15 @@ RegWrite = Branch = ALUSrc = MemWrite = MemRead = Jump = 0
 alu_op = "000"
 alu_cntrl = "0000"
 
-registerfile = d_mem = [0] * 32
+registerfile = ['0x0'] * 32
+
+d_mem = { 
+            '0x00':'0', '0x04':'0','0x08':'0','0x0c':'0','0x10':'0','0x14':'0','0x18':'0','0x1c':'0',
+            '0x20':'0','0x24':'0','0x28':'0','0x2c':'0','0x30':'0','0x34':'0','0x38':'0',
+            '0x3c':'0','0x40':'0','0x44':'0','0x48':'0','0x4c':'0','0x50':'0','0x54':'0',
+            '0x58':'0','0x5c':'0','0x60':'0', '0x64':'0','0x68':'0','0x6c':'0','0x70':'0',
+            '0x74':'0', '0x78':'0','0x7c':'0'
+        }
 
 #Putting these in so we can use actual hex values to get the key to to d-mem. Update: got rid of hex
 #Got rid of type decoder definitions, only need decoder
@@ -94,7 +103,7 @@ def Decode():
 
         if op_name == 'jal':
             registerfile[31] = next_pc         #Set $ra to next_pc if jal
-            Writeback(2, 0, 31, next_pc)
+            Writeback(2, 0, 31, hex(next_pc))
         
         #Expand next_pc into a 32 bit address
         next_pc_binary = bin(next_pc).replace("0b", "")
@@ -109,7 +118,7 @@ def Decode():
         jump_target_bin = significant_bits + mult_imm
         #Change binary to decimal for target address
         jump_target = int(jump_target_bin,2)
-        print ("Jump Target: " + str(jump_target)) #Testing
+        #print ("Jump Target: " + str(jump_target)) #Testing
 
         return
 
@@ -132,14 +141,33 @@ def Decode():
 #correct code to the main program
 #Fixed my confusion, no need for any logic here, that is later
 
-def Fetch():
-    global current_machine_code, pc, next_pc
-    #print("") #Testing
-    print("Current PC: " + str(pc)) #Testing
-    current_machine_code = machine_codes[(pc)]
-    next_pc = pc + 4
-    pc = pc + 4 #PC here is temporary, actual pc is chosen later
-    print("Next PC: " + str(pc)) #Testing
+def Fetch(type):
+    global current_machine_code, pc, next_pc, end_check
+    if type == 0:
+        pc = 0
+    if type == 1:
+        pc = next_pc
+    if type == 2:
+        pc = jump_target
+    if type == 3:
+        #print(branch_target)   #Testing
+        pc = branch_target
+    if type == 4:
+        pc = registerfile[31]
+
+    if pc >= len(machine_codes):
+        end_check = 1
+    if end_check == 0:
+        current_machine_code = machine_codes[pc]
+        next_pc = pc + 4
+
+        #print("") #Testing
+
+    if type != 0:
+        Writeback(1, pc, 0, 0)
+
+    #print("Current PC: " + str(pc)) #Testing
+    #print("Next PC: " + str(next_pc)) #Testing
     return 
 
 
@@ -148,89 +176,102 @@ def Execute():
     #and sign-extended offset values retrieved/computed by Decode() function will be used for
     #computation.
     global alu_zero, branch_target, registerfile
-
     comp_result = 0
 
     #and
     if alu_cntrl == '0000':
-        comp_result = registerfile[rs] & registerfile[rt]
-        registerfile[rd] = comp_result
-        Writeback(2,0,registerfile[rd],hex(comp_result))
+        comp_result = int(registerfile[rs],16) & int(registerfile[rt],16)
+        registerfile[rd] = hex(comp_result)
+        Writeback(2,0,rd,hex(comp_result))
         if comp_result == 0:
             alu_zero = 1
     #or
     if alu_cntrl == '0001':
-        comp_result = registerfile[rs] | registerfile[rt]
-        registerfile[rd] = comp_result
-        Writeback(2,0,registerfile[rd],hex(comp_result))
+        comp_result = int(registerfile[rs],16) | int(registerfile[rt],16)
+        registerfile[rd] = hex(comp_result)
+        Writeback(2,0,rd,hex(comp_result))
         if comp_result == 0:
             alu_zero = 1
     #add
     if alu_cntrl == '0010':
+        if Jump == 1 and RegWrite == 1:
+            Fetch(4)
+            return
+        if Jump == 1 and RegWrite == 0:
+            Fetch(2)
+            return
         #SW
         if ALUSrc == 1 and MemWrite == 1:
             Mem()
+            Fetch(1)
             return
         #LW
         if MemtoReg == '01':
             Mem()
+            Fetch(1)
             return
-        comp_result = registerfile[rs] + registerfile[rt]
-        registerfile[rd] = comp_result
-        Writeback(2,0,registerfile[rd],hex(comp_result))
+        comp_result = int(registerfile[rs],16) + int(registerfile[rt],16)
+        registerfile[rd] = hex(comp_result)
+        Writeback(2,0,rd,hex(comp_result))
         if comp_result == 0:
             alu_zero = 1
+
     #sub/beq
     if alu_cntrl == '0110':
-        comp_result = registerfile[rs] - registerfile[rt]
-        registerfile[rd] = comp_result
-        Writeback(2,0,registerfile[rd],hex(comp_result))
-        if comp_result == 0:
+        comp_result = int(registerfile[rs],16) - int(registerfile[rt],16)
+        if Branch == 0:
+            registerfile[rd] = hex(comp_result)
+            Writeback(2,0,rd,hex(comp_result))
+        if comp_result == 0 and Branch == 1:
+            offset_to_dec = int(sign_extension,2)
+            shift_left_offset = offset_to_dec * 4
             alu_zero = 1
+            branch_target = shift_left_offset + next_pc
+            Fetch(3)
+            return
+        
     #slt
     if alu_cntrl == '0111':
-        if registerfile[rs] < registerfile[rt]:
+        if int(registerfile[rs],16) < int(registerfile[rt],16):
             alu_zero = 1
         else:
             alu_zero = 0
         registerfile[rd] = hex(alu_zero)
-        print(hex(alu_zero))
-        Writeback(2,0,registerfile[rd],hex(alu_zero))
+        #print(hex(alu_zero)    #Testing
+        Writeback(2,0,rd,hex(alu_zero))
             
     #NOR
     if alu_cntrl == '1100':
-        comp_result = ~(registerfile[rs] | registerfile[rt])
-        registerfile[rd] = comp_result
-        Writeback(2,0,registerfile[rd],hex(comp_result))
+        comp_result = ~(int(registerfile[rs],16) | int(registerfile[rt],16))
+        registerfile[rd] = hex(comp_result)
+        Writeback(2,0,rd,hex(comp_result))
         if comp_result == 0:
             alu_zero = 1
 
+    #jr
+    if alu_cntrl == '0011':
+        Fetch(4)
 
-   
-    #offset_to_dec = int(sign_extension,10)
-    #shift_left_offset = offset_to_dec * 4
-    #branch_target = shift_left_offset + next_pc
+    Fetch(1)
+    return
 
-    #need to do the last part
-    # the last thing needed is " The
-    #second step is to add the shift-left-2 output with the PC+4 value."
-    #update this later(note to myself)
-    #branch_target = shift_left_ofsset + value of PC+4
+
 
 def Mem():
-    global d_mem, registerfile
+    global d_mem, registerfile, RegWrite, RegDst, Branch, ALUSrc, MemWrite, MemtoReg, MemRead, sign_extension, rt, rd, rs
+
     #load word
     # R[rt] = M[R[rs]+SignExtImm]
-    if MemtoReg == 1 and MemRead == 1:
-        print(int(registerfile[rs],2)+int(sign_extension,2))
-        registerfile[rt] = d_mem[int(registerfile[rs],2)+int(sign_extension,2)]
-        #Writeback(2, 0, rt, d_mem[int(registerfile[rs],2)+int(sign_extension,2)])
+    if MemtoReg == '01' and MemRead == 1:
+        registerfile[rt] = d_mem[hex(int(registerfile[rs],16)+int(sign_extension,2))]
+        Writeback(2, 0, rt, d_mem[hex(int(registerfile[rs],16)+int(sign_extension,2))])
+
     #store word
     # M[R[rs]+SignExtImm]=R[rt]    
     if MemWrite == 1:
-        print(int(registerfile[rs],2)+int(sign_extension,2))
-        d_mem[int(registerfile[rs],2)+int(sign_extension,2)] = registerfile[rt] 
-        #Writeback(3, 0, (int(registerfile[rs],2)+int(sign_extension,2)), registerfile[rt])
+        d_mem[hex(int(registerfile[rs],16)+int(sign_extension,2))] = registerfile[rt] 
+        Writeback(3, 0, (hex(int(registerfile[rs],16)+int(sign_extension,2))), registerfile[rt])
+
     return
 
 def Writeback(type, next, register, modification):
@@ -243,9 +284,9 @@ def Writeback(type, next, register, modification):
             '29':'$sp','31':'$fp', '31':'$ra'
     }
     if type == 1:
-        print("pc is modified to " + str(next))
+        print("pc is modified to " + hex(next))
     if type == 2:
-        print(str(Register_Dict[register]) + " is modified to " + str(hex(modification)))
+        print(Register_Dict[str(register)]+ " is modified to " + modification)
     if type == 3:
         print("memory " + register + " is modified to " + modification)
     if type == 4:
@@ -267,7 +308,8 @@ def ControlUnit():
         MemtoReg = "00"
         Branch = ALUSrc = MemWrite =  MemRead = Jump = 0
         RegWrite = 1
-        alu_op = "10"   
+        alu_op = "10"
+
 
     if instruction_type == "I":
         if op_name == 'lw':
@@ -321,6 +363,8 @@ def ControlUnit():
             alu_cntrl = "0111"
         if funct == "100111":   #nor
             alu_cntrl = "1100"
+        if funct == "001000":   #jr
+            alu_cntrl = "0011"
 
     return    
 
@@ -328,8 +372,8 @@ def ControlUnit():
 
 
 def main():
-    global lines, total_clock_cycles, machine_codes
-    filename = "sample_part1.txt" #Testing
+    global lines, total_clock_cycles, machine_codes, registerfile, d_mem
+    filename = "sample_part2.txt" #Testing
 
     #filename = input("Enter the program file name to run: \n\n")
 
@@ -351,18 +395,31 @@ def main():
 
     #print(machine_codes) #Testing
 
-    #Loop where most of the code happens:
-    for i in range(0,len(lines)):
-        if lines[i] != "":  
-            Writeback(4, 0, 0, 0) #Clock Cycle Counter
+    #Set up prefilled variables
+    if filename == "sample_part1.txt":
+        registerfile[9] = '0x20'
+        registerfile[10] = '0x5'
+        registerfile[16] = '0x70'
 
-            Fetch()
-            Decode()
-            Execute()
+        d_mem['0x70'] = '0x5'
+        d_mem['0x74'] = '0x10'
+
+    if filename == "sample_part2.txt":
+        registerfile[16] = '0x20'
+        registerfile[4] = '0x5'
+        registerfile[5] = '0x2'
+        registerfile[6] = '0xa'
+
+    #Loop where the code happens:
+    #Get first binary line, all others will be chosen in execute and choice sent to fetch
+    Fetch(0)
+    while end_check == 0:  
+        Writeback(4, 0, 0, 0) #Clock Cycle Counter
+        Decode()
+        Execute()
         
-
     print("\nprogram terminated: ")
     print("total execution time is " + str(total_clock_cycles) + " cylces")
-
+    #print(d_mem)
 if __name__ == "__main__":
     main()
