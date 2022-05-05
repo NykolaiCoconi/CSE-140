@@ -155,7 +155,7 @@ def Fetch(type):
     if type == 4:
         pc = registerfile[31]
 
-    if pc >= len(machine_codes):
+    if pc >= len(machine_codes) or machine_codes[pc] == "":
         end_check = 1
     if end_check == 0:
         current_machine_code = machine_codes[pc]
@@ -385,7 +385,7 @@ def ControlUnit():
 
 def main():
     global lines, total_clock_cycles, machine_codes, registerfile, d_mem
-    #filename = "sample_part1.txt" #Testing
+    #filename = "sample_part2.txt" #Testing
 
     filename = input("Enter the program file name to run: \n\n")
 
