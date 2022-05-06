@@ -243,13 +243,13 @@ def Mem():
     global sign_extension, rt, rd, rs
     #load word
     # R[rt] = M[R[rs]+SignExtImm]
-    if MemtoReg == '01' and MemRead == 1:
+    if RegDst == alu_op == "00" and MemtoReg == "01" and Branch == Jump == MemWrite == 0 and ALUSrc == MemRead == RegWrite == 1:
         registerfile[rt] = d_mem[hex(int(registerfile[rs],16)+int(sign_extension,2))]
         #Writeback change to register files
         Writeback(2,0,rt,d_mem[hex(int(registerfile[rs],16)+int(sign_extension,2))])
     #store word
     # M[R[rs]+SignExtImm]=R[rt]    
-    if MemWrite == 1:
+    if RegDst == alu_op == MemtoReg == "00" and Branch == MemRead == Jump == RegWrite == 0 and ALUSrc == MemWrite == 1:
         d_mem[hex(int(registerfile[rs],16)+int(sign_extension,2))] = registerfile[rt] 
         #Writeback change to d_mem
         Writeback(3,0,(hex(int(registerfile[rs],16)+int(sign_extension,2))),registerfile[rt])
